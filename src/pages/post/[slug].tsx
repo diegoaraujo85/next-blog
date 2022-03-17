@@ -1,10 +1,11 @@
 import { useRouter } from 'next/router';
 import { GetStaticPaths, GetStaticProps } from 'next';
 import { FiUser, FiCalendar, FiClock } from 'react-icons/fi';
+import Prismic from '@prismicio/client';
 import { format } from 'date-fns';
 import ptBR from 'date-fns/locale/pt-BR';
 
-import { client } from '../../services/prismic';
+import { getPrismicClient } from '../../services/prismic';
 
 import commonStyles from '../../styles/common.module.scss';
 import styles from './post.module.scss';
@@ -106,10 +107,10 @@ export default function Post({ post }: PostProps): JSX.Element {
 }
 
 export const getStaticPaths: GetStaticPaths = async () => {
-  const prismic = client;
-  const posts = await prismic.getByType('posts', {
-    pageSize: 1,
-  });
+  const prismic = getPrismicClient();
+  const posts = await prismic.query(
+    Prismic.Predicates.at('document.type', 'posts')
+  );
 
   const paths = posts.results.map(post => ({
     params: {
@@ -126,7 +127,7 @@ export const getStaticPaths: GetStaticPaths = async () => {
 export const getStaticProps: GetStaticProps = async context => {
   const { slug } = context.params;
 
-  const prismic = client;
+  const prismic = getPrismicClient();
   const response = await prismic.getByUID('posts', slug as string, {});
   return {
     props: {

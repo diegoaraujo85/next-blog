@@ -1,11 +1,12 @@
 import { useState, useCallback } from 'react';
 import { GetStaticProps } from 'next';
-import Link from 'next/link';
 import { FiCalendar, FiUser } from 'react-icons/fi';
 import { format } from 'date-fns';
+import Prismic from '@prismicio/client';
+import Link from 'next/link';
 import ptBR from 'date-fns/locale/pt-BR';
 
-import { client } from '../services/prismic';
+import { getPrismicClient } from '../services/prismic';
 
 import Header from '../components/Header';
 
@@ -92,28 +93,17 @@ export default function Home({ postsPagination }: HomeProps): JSX.Element {
 }
 
 export const getStaticProps: GetStaticProps = async () => {
-  const prismic = client;
-  const postsResponse = await prismic.getByType('posts', {
-    pageSize: 1,
-  });
-
-  const posts = postsResponse.results.map(post => ({
-    uid: post.uid,
-    first_publication_date: post.first_publication_date,
-    data: {
-      title: post.data.title,
-      subtitle: post.data.subtitle,
-      author: post.data.author,
-    },
-  }));
+  const prismic = getPrismicClient();
+  const postsResponse = await prismic.query(
+    [Prismic.Predicates.at('document.type', 'posts')],
+    {
+      pageSize: 1,
+    }
+  );
 
   return {
     props: {
-      postsPagination: {
-        next_page: postsResponse.next_page,
-        page: postsResponse.page,
-        results: posts,
-      },
+      postsPagination: postsResponse,
     },
   };
 };
